@@ -84,18 +84,21 @@ func (zk *Zk) GetNode(node string) ([]byte, *zk2.Stat, error) {
 }
 
 //创建节点
-func (zk *Zk) CreateNode(node string, data []byte, flags int32, acl []zk2.ACL) error {
+func (zk *Zk) CreateNode(node string, data []byte, flags int32, acl []zk2.ACL) (string, error) {
 	ok, _, err := zk.Conn.Exists(node)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if !ok {
-		_, err := zk.Conn.Create(node, data, flags, acl)
-		if err != nil {
-			return err
-		}
+		return zk.Conn.Create(node, data, flags, acl)
 	}
-	return nil
+	return node, nil
+}
+
+//创建锁节点
+func (zk *Zk) CreateLockNode(node string, data []byte, flags int32, acl []zk2.ACL) (string, error) {
+	zk.Conn.Sync(node)
+	return zk.Conn.Create(node, data, flags, acl)
 }
 
 //删除节点

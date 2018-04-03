@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+const (
+	ClientNode  = "/%s/client"
+	ServerNode  = "/%s/server"
+	TopicNode  = "/%s"
+)
+
 type Topic struct {
 	Name       string //topic name
 	Zk         *Zk
@@ -20,24 +26,20 @@ func CreateTopic(name string, addr string) (*Topic, error) {
 		Zk:         zk,
 		ServerAddr: addr,
 	}
+
 	time := time.Now().Unix()
 	timeSf := fmt.Sprintf("{\"time\":%d}", time)
-	taskNode := fmt.Sprintf("/%s", name)
-	err := zk.CreateNode(taskNode, []byte(timeSf), 0, zk2.WorldACL(zk2.PermAll))
+	taskNode := fmt.Sprintf(TopicNode, name)
+	//创建任务父节点
+	_,err := zk.CreateNode(taskNode, []byte(timeSf), 0, zk2.WorldACL(zk2.PermAll))
+	//创建客户端父节点
+	clientNode := fmt.Sprintf(ClientNode, name)
+	zk.CreateNode(clientNode, []byte(timeSf), 0, zk2.WorldACL(zk2.PermAll))
+	//创建服务端父节点
+	serverNode := fmt.Sprintf(ServerNode, name)
+	zk.CreateNode(serverNode, []byte(timeSf), 0, zk2.WorldACL(zk2.PermAll))
 	if err != nil {
 		return nil, err
 	}
 	return topic, nil
-}
-
-func (tp *Topic) CreateClientNode() error {
-	node := fmt.Sprintf("/%s/client", tp.Name)
-	ok, _, _ := tp.Zk.Conn.Exists(node)
-	if !ok {
-		err := tp.Zk.CreateNode(node, nil, zk2.FlagSequence|zk2.FlagEphemeral, zk2.WorldACL(zk2.PermAll))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }

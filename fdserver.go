@@ -7,7 +7,11 @@ import (
 )
 
 func main() {
-	err := Run()
+	//todo 主备切换
+	//todo 热重启
+	//todo 热加载配置
+
+	err := ServerRun()
 	CheckErr(err)
 }
 
@@ -18,7 +22,7 @@ func CheckErr(err error) {
 	}
 }
 
-func Run() error {
+func ServerRun() error {
 	//获取ct配置
 	config, err := common.GetServerConfig()
 	if err != nil {

@@ -13,6 +13,8 @@ func main()  {
 	//todo 清除topic所有任务
 	//todo 清除topic task 所有任务
 	//todo 热重启
+	//todo 热加载配置
+	//todo 任务进度跟踪
 
 	ClientRun()
 }
@@ -42,7 +44,7 @@ func ClientRun() {
 	for _, topic := range cl.Topics {
 		temp := topic.Task
 		for _,v:=range(temp) {
-			go v.ListenNode()
+			go cl.ListenNode(v)
 		}
 	}
 	select {}

@@ -4,8 +4,7 @@ import (
 	"errors"
 	"fdqtest/common"
 	"fmt"
-	"net"
-
+	zk2 "github.com/samuel/go-zookeeper/zk"
 )
 
 type Server struct {
@@ -14,7 +13,7 @@ type Server struct {
 }
 
 func GetServer() *Server {
-	ip, err := getIp()
+	ip, err := common.GetIp()
 	if err != nil {
 		panic(err)
 	}
@@ -29,7 +28,7 @@ func (cl *Server) Connect(topicName string, addr string) *common.Topic {
 		fmt.Println(err.Error())
 		panic(err)
 	}
-	err = topic.CreateClientNode()
+	err = cl.JoinNode(topic)
 	if err != nil {
 		fmt.Println(err.Error())
 		panic(err)
@@ -38,20 +37,15 @@ func (cl *Server) Connect(topicName string, addr string) *common.Topic {
 	return topic
 }
 
-func getIp() (string, error) {
-	addr, err := net.InterfaceAddrs()
-	if err != nil {
-		return "", err
+func (cl *Server) JoinNode(tp *common.Topic) error {
+	node := fmt.Sprintf(common.ServerNode, tp.Name)
+	ok, _, err := tp.Zk.Conn.Exists(node)
+	if !ok {
+		fmt.Println(err.Error())
+		return errors.New("no server parent node")
 	}
-	for _, address := range addr {
-		// 检查ip地址判断是否回环地址
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String(), nil
-			}
-		}
-	}
-	return "", errors.New("no ip")
+	node = fmt.Sprintf("%s/server-", node)
+	_,err = tp.Zk.CreateNode(node, []byte(cl.Ip), zk2.FlagSequence|zk2.FlagEphemeral, zk2.WorldACL(zk2.PermAll))
+	return err
 }
-
 
